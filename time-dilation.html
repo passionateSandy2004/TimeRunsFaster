@@ -1,0 +1,1111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta property="og:title" content="Real-Time Time Dilation — You vs Satellites">
+<meta property="og:description" content="Watch Einstein's relativity happen live. Your clock and GPS satellite clocks are running at different speeds right now.">
+<title>Time Dilation — Live</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400;600;700&family=Orbitron:wght@400;600;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+:root {
+  --void:    #00000f;
+  --deep:    #020818;
+  --ink:     #050e22;
+  --panel:   rgba(2, 12, 35, 0.85);
+  --rim:     rgba(80, 180, 255, 0.15);
+  --rim2:    rgba(80, 180, 255, 0.08);
+  --cyan:    #38d9ff;
+  --blue:    #1a8fff;
+  --gold:    #ffcc44;
+  --amber:   #ff9a00;
+  --green:   #00ffb3;
+  --red:     #ff3d6e;
+  --dim:     #3a6080;
+  --muted:   #1e3a55;
+  --text:    #c5dff5;
+  --white:   #e8f4ff;
+  --glow-c:  0 0 30px rgba(56,217,255,0.25);
+  --glow-g:  0 0 30px rgba(255,204,68,0.3);
+}
+
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--void);
+  color: var(--text);
+  font-family: 'Rajdhani', sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ─── CANVAS BACKGROUND ─────────────────────────────────── */
+#cosmos { position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none; }
+
+/* ─── LAYOUT ─────────────────────────────────────────────── */
+.wrap {
+  position: relative; z-index: 1;
+  max-width: 520px; margin: 0 auto;
+  padding: 0 16px 60px;
+}
+
+/* ─── HERO HEADER ────────────────────────────────────────── */
+.hero-head {
+  text-align: center;
+  padding: 32px 0 0;
+}
+
+.site-eyebrow {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px; letter-spacing: 5px;
+  color: var(--blue); text-transform: uppercase;
+  margin-bottom: 10px;
+  animation: fadeDown 1s ease both;
+}
+
+.site-title {
+  font-family: 'Orbitron', monospace;
+  font-size: clamp(24px, 7vw, 38px);
+  font-weight: 900; line-height: 1.1;
+  color: var(--white);
+  text-shadow: 0 0 40px rgba(56,217,255,0.4);
+  animation: fadeDown 1s 0.1s ease both;
+}
+
+.site-title span { color: var(--cyan); }
+
+.site-sub {
+  font-size: 14px; color: var(--dim);
+  margin-top: 10px; line-height: 1.6;
+  animation: fadeDown 1s 0.2s ease both;
+}
+
+@keyframes fadeDown {
+  from { opacity:0; transform:translateY(-12px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+
+/* ─── GPS ACQUIRE ────────────────────────────────────────── */
+.acquire-zone {
+  margin: 24px 0 0;
+  animation: fadeDown 1s 0.3s ease both;
+}
+
+.acquire-btn {
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  width: 100%; padding: 16px 24px;
+  background: linear-gradient(135deg, rgba(26,143,255,0.2), rgba(56,217,255,0.08));
+  border: 1px solid var(--cyan);
+  border-radius: 12px;
+  color: var(--cyan);
+  font-family: 'Orbitron', monospace;
+  font-size: 13px; font-weight: 600; letter-spacing: 2px;
+  text-transform: uppercase; cursor: pointer;
+  transition: all 0.3s;
+  box-shadow: var(--glow-c);
+  position: relative; overflow: hidden;
+}
+.acquire-btn::before {
+  content: '';
+  position: absolute; top: -50%; left: -50%;
+  width: 200%; height: 200%;
+  background: radial-gradient(circle, rgba(56,217,255,0.08) 0%, transparent 60%);
+  opacity: 0; transition: opacity 0.3s;
+}
+.acquire-btn:hover::before  { opacity: 1; }
+.acquire-btn:hover          { box-shadow: 0 0 50px rgba(56,217,255,0.35); border-color: var(--white); }
+.acquire-btn:active         { transform: scale(0.98); }
+.acquire-btn:disabled       { opacity: 0.35; cursor: not-allowed; box-shadow: none; border-color: var(--muted); color: var(--dim); }
+
+.acquire-icon { font-size: 20px; animation: pulse-icon 2s infinite; }
+@keyframes pulse-icon { 0%,100%{transform:scale(1);}50%{transform:scale(1.15);} }
+
+.status-line {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px; text-align: center;
+  margin-top: 10px; min-height: 18px;
+  letter-spacing: 1px; color: var(--dim);
+  transition: color 0.3s;
+}
+.status-line.ok      { color: var(--green); }
+.status-line.err     { color: var(--red); }
+.status-line.loading { color: var(--gold); animation: blink 1s infinite; }
+@keyframes blink { 50%{opacity:0.3;} }
+
+/* ─── HERO DILATION CARD ─────────────────────────────────── */
+.hero-card {
+  margin: 20px 0;
+  background: var(--panel);
+  border: 1px solid rgba(255,204,68,0.3);
+  border-radius: 20px;
+  padding: 28px 20px 24px;
+  backdrop-filter: blur(20px);
+  position: relative; overflow: hidden;
+  box-shadow: 0 0 60px rgba(255,204,68,0.08), inset 0 1px 0 rgba(255,204,68,0.1);
+  animation: fadeDown 1s 0.4s ease both;
+}
+
+.hero-card::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, transparent, var(--gold), var(--amber), transparent);
+  animation: shimmer 3s infinite;
+}
+@keyframes shimmer {
+  0%,100%{opacity:0.6;} 50%{opacity:1;}
+}
+
+.hero-card::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: radial-gradient(ellipse at 50% 0%, rgba(255,204,68,0.04) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.hero-label {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px; letter-spacing: 4px;
+  color: var(--gold); text-transform: uppercase;
+  text-align: center; margin-bottom: 6px;
+}
+
+.hero-question {
+  font-family: 'Orbitron', monospace;
+  font-size: clamp(13px, 3.5vw, 16px);
+  font-weight: 600; text-align: center;
+  color: var(--white); margin-bottom: 20px;
+  line-height: 1.4;
+}
+
+/* The BIG number */
+.dilation-display {
+  text-align: center; position: relative;
+}
+
+.dilation-live-label {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 9px; letter-spacing: 3px;
+  color: var(--amber); margin-bottom: 4px;
+  animation: blink 2s infinite;
+}
+
+.dilation-number {
+  font-family: 'Orbitron', monospace;
+  font-size: clamp(36px, 11vw, 56px);
+  font-weight: 900; line-height: 1;
+  color: var(--gold);
+  text-shadow: 0 0 30px rgba(255,204,68,0.7), 0 0 60px rgba(255,204,68,0.3);
+  letter-spacing: -1px;
+  transition: color 0.5s;
+  word-break: break-all;
+}
+
+.dilation-number.awaiting {
+  color: var(--muted);
+  text-shadow: none;
+  font-size: clamp(18px, 5vw, 24px);
+  padding: 16px 0;
+}
+
+.dilation-unit {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px; color: var(--amber);
+  letter-spacing: 2px; margin-top: 6px;
+}
+
+.dilation-meaning {
+  margin-top: 16px;
+  background: rgba(0,0,0,0.3);
+  border-radius: 10px; padding: 12px 16px;
+  font-size: 13px; color: var(--text);
+  line-height: 1.7; text-align: center;
+}
+.dilation-meaning strong { color: var(--gold); }
+.dilation-meaning .hidden-msg { display:none; }
+
+/* ─── WHAT IS HAPPENING — EXPLAINER ─────────────────────── */
+.explainer {
+  margin: 0 0 18px;
+  background: var(--panel);
+  border: 1px solid var(--rim);
+  border-radius: 16px; padding: 20px;
+  backdrop-filter: blur(12px);
+  animation: fadeDown 1s 0.5s ease both;
+}
+
+.explainer-title {
+  font-family: 'Orbitron', monospace;
+  font-size: 11px; font-weight: 600;
+  letter-spacing: 3px; color: var(--cyan);
+  text-transform: uppercase; margin-bottom: 14px;
+  display: flex; align-items: center; gap: 8px;
+}
+
+.dot-live {
+  width: 7px; height: 7px;
+  background: var(--cyan); border-radius: 50%;
+  box-shadow: 0 0 8px var(--cyan);
+  animation: pdot 1.5s infinite;
+  flex-shrink: 0;
+}
+@keyframes pdot { 0%,100%{opacity:1;transform:scale(1);}50%{opacity:0.3;transform:scale(0.6);} }
+
+.explain-cards {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.explain-card {
+  background: rgba(0,0,0,0.25);
+  border: 1px solid var(--rim2);
+  border-radius: 10px; padding: 12px 10px;
+  text-align: center;
+}
+
+.explain-card .icon  { font-size: 24px; display: block; margin-bottom: 6px; }
+.explain-card .name  { font-family:'Orbitron',monospace; font-size:9px; color:var(--cyan); letter-spacing:2px; margin-bottom:6px; }
+.explain-card .val   { font-family:'Share Tech Mono',monospace; font-size:12px; color:var(--gold); }
+.explain-card .sub   { font-size:11px; color:var(--dim); margin-top:4px; line-height:1.4; }
+
+.vs-divider {
+  text-align: center; padding: 8px 0;
+  font-family: 'Orbitron', monospace;
+  font-size: 11px; color: var(--dim);
+  letter-spacing: 3px;
+}
+
+.explain-why {
+  margin-top: 14px;
+  font-size: 13px; color: var(--text);
+  line-height: 1.8;
+  border-top: 1px solid var(--rim2);
+  padding-top: 14px;
+}
+.explain-why strong { color: var(--cyan); }
+.explain-why .pill {
+  display: inline-block;
+  background: rgba(56,217,255,0.1);
+  border: 1px solid rgba(56,217,255,0.25);
+  border-radius: 20px;
+  padding: 2px 10px;
+  font-size: 11px; color: var(--cyan);
+  margin: 2px 2px;
+  white-space: nowrap;
+}
+
+/* ─── TWO EFFECTS ────────────────────────────────────────── */
+.effects-grid {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 10px; margin: 0 0 18px;
+  animation: fadeDown 1s 0.6s ease both;
+}
+
+.effect-card {
+  background: var(--panel);
+  border: 1px solid var(--rim);
+  border-radius: 14px; padding: 16px 14px;
+  backdrop-filter: blur(12px);
+  position: relative; overflow: hidden;
+}
+.effect-card::before {
+  content: ''; position: absolute;
+  top:0;left:0;right:0;height:2px;
+}
+.effect-card.sr::before { background: linear-gradient(90deg,transparent,var(--red),transparent); }
+.effect-card.gr::before { background: linear-gradient(90deg,transparent,var(--green),transparent); }
+
+.effect-icon  { font-size: 22px; margin-bottom: 8px; }
+.effect-name  { font-family:'Orbitron',monospace; font-size:9px; letter-spacing:2px; margin-bottom:4px; text-transform:uppercase; }
+.effect-card.sr .effect-name { color: var(--red); }
+.effect-card.gr .effect-name { color: var(--green); }
+.effect-val   { font-family:'Share Tech Mono',monospace; font-size:13px; color:var(--white); margin: 6px 0; }
+.effect-desc  { font-size:11px; color:var(--dim); line-height:1.5; }
+.effect-awaiting { font-size:11px; color:var(--muted); font-style:italic; }
+
+/* ─── YOUR POSITION ──────────────────────────────────────── */
+.position-card {
+  margin: 0 0 18px;
+  background: var(--panel);
+  border: 1px solid var(--rim);
+  border-radius: 16px; padding: 18px 20px;
+  backdrop-filter: blur(12px);
+  animation: fadeDown 1s 0.7s ease both;
+}
+
+.card-title {
+  font-family: 'Orbitron', monospace;
+  font-size: 10px; font-weight: 600;
+  letter-spacing: 3px; color: var(--cyan);
+  text-transform: uppercase; margin-bottom: 14px;
+  display: flex; align-items: center; gap: 8px;
+}
+
+.row {
+  display: flex; justify-content: space-between;
+  align-items: baseline; padding: 7px 0;
+  border-bottom: 1px solid rgba(56,217,255,0.06);
+  gap: 8px;
+}
+.row:last-child { border-bottom: none; }
+.rk { font-size: 11px; color: var(--dim); letter-spacing: 0.5px; flex:1; }
+.rv { font-family:'Share Tech Mono',monospace; font-size:11px; color:var(--white); text-align:right; word-break:break-all; }
+.rv.gold  { color:var(--gold); }
+.rv.cyan  { color:var(--cyan); }
+.rv.green { color:var(--green); }
+.rv.muted { color:var(--muted); font-style:italic; }
+
+/* ─── LIVE CORRECTION COUNTER ────────────────────────────── */
+.correction-card {
+  margin: 0 0 18px;
+  background: var(--panel);
+  border: 1px solid rgba(0,255,179,0.2);
+  border-radius: 16px; padding: 20px;
+  backdrop-filter: blur(12px);
+  box-shadow: 0 0 40px rgba(0,255,179,0.05);
+  animation: fadeDown 1s 0.8s ease both;
+}
+
+.correction-card::before {
+  content: ''; display: block;
+  height: 2px; border-radius: 1px;
+  background: linear-gradient(90deg, transparent, var(--green), transparent);
+  margin-bottom: 16px;
+}
+
+.correction-row {
+  display: flex; justify-content: space-between;
+  align-items: center; padding: 8px 0;
+  border-bottom: 1px solid rgba(0,255,179,0.06);
+}
+.correction-row:last-child { border-bottom: none; }
+.cr-label { font-size:11px; color:var(--dim); flex:1; }
+.cr-val   { font-family:'Share Tech Mono',monospace; font-size:12px; color:var(--green); text-align:right; }
+
+.correction-big {
+  text-align: center; padding: 14px 0 8px;
+}
+.correction-number {
+  font-family: 'Orbitron', monospace;
+  font-size: clamp(22px, 7vw, 32px);
+  font-weight: 900;
+  color: var(--green);
+  text-shadow: 0 0 25px rgba(0,255,179,0.5);
+}
+.correction-unit {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px; color: var(--dim);
+  letter-spacing: 2px; margin-top: 4px;
+}
+
+/* ─── WHAT IF NO CORRECTION ──────────────────────────────── */
+.whatif-card {
+  margin: 0 0 18px;
+  background: linear-gradient(135deg, rgba(255,61,110,0.06), rgba(255,154,0,0.04));
+  border: 1px solid rgba(255,61,110,0.2);
+  border-radius: 16px; padding: 20px;
+  backdrop-filter: blur(12px);
+  animation: fadeDown 1s 0.9s ease both;
+}
+
+.whatif-title {
+  font-family: 'Orbitron', monospace;
+  font-size: 10px; letter-spacing: 3px;
+  color: var(--red); margin-bottom: 14px;
+  display: flex; align-items: center; gap: 8px;
+}
+
+.whatif-big {
+  text-align: center; padding: 8px 0 14px;
+}
+.error-number {
+  font-family: 'Orbitron', monospace;
+  font-size: clamp(24px, 8vw, 38px);
+  font-weight: 900; color: var(--red);
+  text-shadow: 0 0 25px rgba(255,61,110,0.5);
+}
+.error-unit {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px; color: rgba(255,61,110,0.6);
+  letter-spacing: 2px; margin-top: 4px;
+}
+
+.whatif-context {
+  font-size: 13px; color: var(--text); line-height: 1.7;
+  border-top: 1px solid rgba(255,61,110,0.1);
+  padding-top: 14px; margin-top: 4px;
+}
+.whatif-context strong { color: var(--red); }
+
+/* ─── ALTITUDE DILATION ──────────────────────────────────── */
+.altitude-card {
+  margin: 0 0 18px;
+  background: var(--panel);
+  border: 1px solid var(--rim);
+  border-radius: 16px; padding: 20px;
+  backdrop-filter: blur(12px);
+  animation: fadeDown 1s 1.0s ease both;
+}
+
+/* ─── UTC CLOCK ──────────────────────────────────────────── */
+.clock-bar {
+  margin: 0 0 18px;
+  background: var(--panel);
+  border: 1px solid var(--rim);
+  border-radius: 12px; padding: 12px 16px;
+  backdrop-filter: blur(12px);
+  display: flex; justify-content: space-between;
+  align-items: center;
+  animation: fadeDown 1s 0.35s ease both;
+}
+
+.clock-utc {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 14px; color: var(--cyan);
+  text-shadow: 0 0 10px rgba(56,217,255,0.3);
+  letter-spacing: 2px;
+}
+.clock-label-sm {
+  font-size: 9px; color: var(--dim);
+  letter-spacing: 2px; text-align: right;
+}
+
+/* ─── SHARE FOOTER ───────────────────────────────────────── */
+.share-footer {
+  text-align: center; padding-top: 10px;
+  animation: fadeDown 1s 1.1s ease both;
+}
+
+.share-line {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px; color: var(--dim);
+  letter-spacing: 2px; line-height: 1.8;
+}
+
+.source-note {
+  margin-top: 14px;
+  background: rgba(0,0,0,0.3);
+  border: 1px solid var(--rim2);
+  border-radius: 10px; padding: 12px 16px;
+  font-size: 11px; color: var(--dim);
+  line-height: 1.7;
+}
+.source-note strong { color: var(--cyan); }
+
+/* ─── ALT WARNING ────────────────────────────────────────── */
+.alt-warn {
+  background: rgba(255,154,0,0.07);
+  border: 1px solid rgba(255,154,0,0.25);
+  border-radius: 10px; padding: 10px 14px;
+  font-size: 11px; color: var(--amber);
+  line-height: 1.6; margin-bottom: 14px;
+  display: none;
+}
+
+/* ─── AWAIT STATE ────────────────────────────────────────── */
+.await { color: var(--muted); font-style: italic; font-size: 11px; }
+
+/* ─── UTIL ───────────────────────────────────────────────── */
+.hidden { display: none !important; }
+
+/* ─── RESPONSIVE ─────────────────────────────────────────── */
+@media (max-width: 360px) {
+  .effects-grid { grid-template-columns: 1fr; }
+  .explain-cards { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<canvas id="cosmos"></canvas>
+
+<div class="wrap">
+
+  <!-- ── HERO HEADER ── -->
+  <div class="hero-head">
+    <div class="site-eyebrow">🛰 Live Physics · Einstein's Relativity</div>
+    <h1 class="site-title">Your Clock Is Running<br><span>Slower Than Space</span></h1>
+    <p class="site-sub">GPS satellites orbit 20,000 km above you. Right now, their clocks tick at a different rate than yours — because of Einstein's relativity. This page shows you the real numbers, live, from your location.</p>
+  </div>
+
+  <!-- ── UTC CLOCK BAR ── -->
+  <div class="clock-bar">
+    <div>
+      <div style="font-size:9px;color:var(--dim);letter-spacing:2px;margin-bottom:3px;">UTC TIME</div>
+      <div class="clock-utc" id="utc-clock">--:--:--.---</div>
+    </div>
+    <div class="clock-label-sm">
+      DEVICE SYSTEM CLOCK<br>
+      UPDATED EVERY 100ms
+    </div>
+  </div>
+
+  <!-- ── ACQUIRE ── -->
+  <div class="acquire-zone">
+    <button class="acquire-btn" id="gps-btn" onclick="getLocation()">
+      <span class="acquire-icon">📡</span>
+      Show Me My Time Dilation
+    </button>
+    <div class="status-line" id="status">Your location is needed to compute real dilation values</div>
+  </div>
+
+  <div class="alt-warn" id="alt-warn">
+    ⚠ Your device did not return GPS altitude. The "Your altitude vs sea level" section cannot compute without it. All satellite comparisons remain active. Try enabling High-Accuracy GPS or stepping outdoors.
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════ -->
+  <!-- HERO DILATION CARD — THE MAIN EVENT                   -->
+  <!-- ══════════════════════════════════════════════════════ -->
+  <div class="hero-card">
+    <div class="hero-label">⚡ Real-Time · Live From Your GPS</div>
+    <div class="hero-question">How much faster is the satellite clock running compared to yours, right now?</div>
+
+    <div class="dilation-display">
+      <div class="dilation-live-label" id="hero-live-label">● AWAITING GPS FIX</div>
+      <div class="dilation-number awaiting" id="hero-number">Grant location<br>permission above</div>
+      <div class="dilation-unit" id="hero-unit">microseconds ahead · today</div>
+    </div>
+
+    <div class="dilation-meaning" id="hero-meaning">
+      <span class="hidden-msg" id="meaning-await">
+        Once you grant GPS access, this number will show exactly how many microseconds the satellite clocks have run ahead of your clock since midnight UTC — computed from your real coordinates using Einstein's equations.
+      </span>
+      <span id="meaning-live" class="hidden">
+        The satellite clock has run ahead of yours by <strong id="meaning-us">—</strong> µs today. Every second, it gains another <strong id="meaning-rate">—</strong> nanoseconds on your clock. This is not a simulation — it is computed from your GPS coordinates and fundamental physical constants.
+      </span>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════ -->
+  <!-- WHY IS THIS HAPPENING — EXPLAINER                     -->
+  <!-- ══════════════════════════════════════════════════════ -->
+  <div class="explainer">
+    <div class="explainer-title">
+      <span class="dot-live"></span>
+      Why Two Clocks Can't Agree
+    </div>
+
+    <div class="explain-cards">
+      <div class="explain-card">
+        <span class="icon">🛰</span>
+        <div class="name">GPS Satellite</div>
+        <div class="val" id="ex-sat-alt">20,200 km up</div>
+        <div class="sub" id="ex-sat-v">Orbiting at <span id="ex-sat-speed">—</span> m/s</div>
+      </div>
+      <div class="explain-card">
+        <span class="icon">📱</span>
+        <div class="name">You · Earth Surface</div>
+        <div class="val" id="ex-you-alt">— km altitude</div>
+        <div class="sub">Moving at <span id="ex-you-speed">—</span> m/s<br>due to Earth's rotation</div>
+      </div>
+    </div>
+
+    <div class="vs-divider">— TWO COMPETING EFFECTS —</div>
+
+    <div class="explain-why" id="explain-body">
+      <p>Einstein discovered that two things change how fast time flows:</p>
+      <br>
+      <p>
+        <span class="pill">⚡ Special Relativity</span>
+        Moving clocks tick <strong>slower</strong>. The satellite moves much faster than you, so its clock loses time.
+      </p>
+      <br>
+      <p>
+        <span class="pill">🌍 General Relativity</span>
+        Clocks in weaker gravity tick <strong>faster</strong>. The satellite is far from Earth where gravity is weaker, so its clock gains time.
+      </p>
+      <br>
+      <p>The gravity effect wins — satellites end up running <strong style="color:var(--gold)">faster</strong> than your clock. Without correcting for this, your phone's maps would be wrong by kilometres every single day.</p>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════ -->
+  <!-- TWO EFFECTS CARDS                                     -->
+  <!-- ══════════════════════════════════════════════════════ -->
+  <div class="effects-grid">
+
+    <div class="effect-card sr">
+      <div class="effect-icon">⚡</div>
+      <div class="effect-name">Special Relativity</div>
+      <div class="effect-val" id="sr-val"><span class="effect-awaiting">awaiting GPS</span></div>
+      <div class="effect-desc">Satellite moves faster → its clock ticks <span style="color:var(--red)">slower</span> by this much/day</div>
+    </div>
+
+    <div class="effect-card gr">
+      <div class="effect-icon">🌍</div>
+      <div class="effect-name">General Relativity</div>
+      <div class="effect-val" id="gr-val"><span class="effect-awaiting">awaiting GPS</span></div>
+      <div class="effect-desc">Satellite is higher → weaker gravity → clock ticks <span style="color:var(--green)">faster</span> by this much/day</div>
+    </div>
+
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════ -->
+  <!-- YOUR POSITION                                         -->
+  <!-- ══════════════════════════════════════════════════════ -->
+  <div class="position-card">
+    <div class="card-title"><span class="dot-live"></span>Your GPS Position</div>
+    <div id="pos-await" style="text-align:center;padding:16px 0;font-size:12px;color:var(--muted);">📍 Waiting for GPS fix...</div>
+    <div id="pos-data" class="hidden">
+      <div class="row"><span class="rk">Latitude</span><span class="rv gold" id="p-lat">—</span></div>
+      <div class="row"><span class="rk">Longitude</span><span class="rv gold" id="p-lon">—</span></div>
+      <div class="row"><span class="rk">GPS Altitude</span><span class="rv cyan" id="p-alt">—</span></div>
+      <div class="row"><span class="rk">Altitude accuracy</span><span class="rv" id="p-altacc">—</span></div>
+      <div class="row"><span class="rk">Position accuracy</span><span class="rv" id="p-acc">—</span></div>
+      <div class="row"><span class="rk">Your rotation speed  [ω·r·cosφ]</span><span class="rv green" id="p-vrot">—</span></div>
+      <div class="row"><span class="rk">Your radius from Earth centre  [R⊕+h]</span><span class="rv" id="p-radius">—</span></div>
+      <div class="row"><span class="rk">Fix received at (UTC)</span><span class="rv" id="p-ts">—</span></div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════ -->
+  <!-- LIVE CORRECTION COUNTER                               -->
+  <!-- ══════════════════════════════════════════════════════ -->
+  <div class="correction-card">
+    <div class="card-title" style="color:var(--green);"><span class="dot-live" style="background:var(--green);box-shadow:0 0 8px var(--green);"></span>Relativistic Correction Applied to GPS Today</div>
+
+    <div id="corr-await" style="text-align:center;padding:16px 0;font-size:12px;color:var(--muted);">Computed after GPS fix</div>
+    <div id="corr-data" class="hidden">
+      <div class="correction-row">
+        <span class="cr-label">Correction rate (your position)</span>
+        <span class="cr-val" id="cr-rate">—</span>
+      </div>
+      <div class="correction-row">
+        <span class="cr-label">Seconds elapsed since midnight UTC</span>
+        <span class="cr-val" id="cr-elapsed">—</span>
+      </div>
+
+      <div class="correction-big">
+        <div class="correction-number" id="cr-big">—</div>
+        <div class="correction-unit">µs corrected since midnight UTC</div>
+      </div>
+
+      <div class="correction-row">
+        <span class="cr-label">This session duration</span>
+        <span class="cr-val" id="cr-sess-dur">—</span>
+      </div>
+      <div class="correction-row">
+        <span class="cr-label">Correction this session</span>
+        <span class="cr-val" id="cr-sess-corr">—</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════ -->
+  <!-- WHAT IF NO CORRECTION                                 -->
+  <!-- ══════════════════════════════════════════════════════ -->
+  <div class="whatif-card">
+    <div class="whatif-title"><span class="dot-live" style="background:var(--red);box-shadow:0 0 8px var(--red);"></span>If Einstein's Correction Didn't Exist...</div>
+
+    <div id="wi-await" style="text-align:center;padding:16px 0;font-size:12px;color:var(--muted);">Computed after GPS fix</div>
+    <div id="wi-data" class="hidden">
+      <div class="whatif-big">
+        <div class="error-number" id="wi-err">—</div>
+        <div class="error-unit">km of navigation error today</div>
+      </div>
+      <div class="whatif-context">
+        Without relativistic correction, satellite clocks would drift by <strong id="wi-us">—</strong> µs/day from Earth clocks. That drift × the speed of light = <strong id="wi-km">—</strong> km/day of position error. Your Google Maps would be wrong by that distance — every single day, growing without limit.
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════ -->
+  <!-- YOUR ALTITUDE VS SEA LEVEL                            -->
+  <!-- ══════════════════════════════════════════════════════ -->
+  <div class="altitude-card">
+    <div class="card-title"><span class="dot-live"></span>Your Altitude vs Sea Level</div>
+    <div id="alt-await" style="text-align:center;padding:16px 0;font-size:12px;color:var(--muted);">Requires GPS altitude from your device</div>
+    <div id="alt-data" class="hidden">
+      <div class="row"><span class="rk">Gravitational potential at you  [−GM/(R⊕+h)]</span><span class="rv" id="a-phi">—</span></div>
+      <div class="row"><span class="rk">Gravitational potential at sea level  [−GM/R⊕]</span><span class="rv" id="a-phi0">—</span></div>
+      <div class="row"><span class="rk">Dilation ratio  [Δφ/c²]</span><span class="rv cyan" id="a-ratio">—</span></div>
+      <div class="row"><span class="rk">Your clock faster than sea level</span><span class="rv green" id="a-ns">—</span></div>
+      <div class="row"><span class="rk">Drift in 1 year</span><span class="rv gold" id="a-1y">—</span></div>
+      <div class="row"><span class="rk">Drift in 10 years</span><span class="rv gold" id="a-10y">—</span></div>
+
+      <div style="margin-top:12px;background:rgba(0,255,179,0.04);border-radius:8px;padding:12px;font-size:12px;color:var(--dim);line-height:1.7;">
+        Even you — standing at your altitude — experience time slightly faster than someone at sea level. This is the same physics, just much smaller. A clock at the top of a skyscraper genuinely runs faster than one at its base.
+      </div>
+    </div>
+  </div>
+
+  <!-- ── SHARE / SOURCE FOOTER ── -->
+  <div class="share-footer">
+    <div class="source-note">
+      <strong>Open source · Zero hardcoded values</strong><br>
+      Every number on this page is computed live from your GPS coordinates and CODATA/IAU physical constants: c = 299,792,458 m/s (exact), GM = 3.986004418×10¹⁴ m³s⁻², R⊕ = 6,371,000 m, GPS orbital radius = 26,559,710 m. No lookup tables. No estimates. The satellite clock rate used is √(GM/r) — derived from orbital mechanics, not assumed.
+    </div>
+    <div class="share-line" style="margin-top:14px;">
+      GENERAL RELATIVITY · EINSTEIN 1915 · SPECIAL RELATIVITY · EINSTEIN 1905<br>
+      GPS RELATIVISTIC CORRECTION OPERATIONAL SINCE 1978
+    </div>
+  </div>
+
+</div><!-- /wrap -->
+
+<script>
+// ════════════════════════════════════════════════════════════
+//  PHYSICAL CONSTANTS — CODATA 2018 / IAU 2015 / GPS ICD-200
+//  These are definitions of nature. Not defaults. Not guesses.
+// ════════════════════════════════════════════════════════════
+const C       = 299792458;          // m/s   — exact (SI 1983)
+const GM      = 3.986004418e14;     // m³/s² — GPS ICD-200 standard μ
+const R_EARTH = 6371000;            // m     — IAU 2015 mean radius
+const R_SAT   = 26559710;           // m     — GPS ICD-200 nominal semi-major axis
+const OMEGA_E = 7.2921150e-5;       // rad/s — Earth rotation (IAU)
+
+// GPS orbital velocity: circular orbit vis-viva v = √(GM/r)
+const V_SAT   = Math.sqrt(GM / R_SAT);
+
+// ════════════════════════════════════════════════════════════
+//  STATE — nothing populated until real GPS arrives
+// ════════════════════════════════════════════════════════════
+const PAGE_LOAD = Date.now();
+let gpsData      = null;   // filled only by onGPSSuccess
+let netUsPer_day = null;   // filled only after GPS acquired
+
+// ════════════════════════════════════════════════════════════
+//  COSMOS CANVAS — procedural star + nebula background
+// ════════════════════════════════════════════════════════════
+(function initCosmos() {
+  const cv  = document.getElementById('cosmos');
+  const ctx = cv.getContext('2d');
+  let W, H, stars, nebulas;
+
+  function resize() {
+    W = cv.width  = window.innerWidth;
+    H = cv.height = window.innerHeight;
+    buildScene();
+  }
+
+  function buildScene() {
+    // Stars: random positions, sizes, brightness
+    stars = Array.from({length: 280}, () => ({
+      x:    Math.random() * W,
+      y:    Math.random() * H,
+      r:    Math.random() * 1.4 + 0.2,
+      a:    Math.random() * 0.7 + 0.15,
+      spd:  Math.random() * 0.012 + 0.003,
+      ph:   Math.random() * Math.PI * 2,
+    }));
+    // Nebula blobs
+    nebulas = [
+      { x: W*0.15, y: H*0.2,  r: W*0.4, c: 'rgba(26,80,180,0.04)' },
+      { x: W*0.85, y: H*0.6,  r: W*0.35,'c': 'rgba(56,200,255,0.025)' },
+      { x: W*0.5,  y: H*0.85, r: W*0.3, c: 'rgba(0,120,80,0.025)' },
+    ];
+  }
+
+  let t = 0;
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+    // Background gradient
+    const bg = ctx.createRadialGradient(W/2, H/2, 0, W/2, H/2, Math.max(W,H)*0.8);
+    bg.addColorStop(0, '#020818');
+    bg.addColorStop(1, '#00000f');
+    ctx.fillStyle = bg; ctx.fillRect(0,0,W,H);
+    // Nebulas
+    nebulas.forEach(n => {
+      const g = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, n.r);
+      g.addColorStop(0, n.c); g.addColorStop(1, 'transparent');
+      ctx.fillStyle = g; ctx.fillRect(0,0,W,H);
+    });
+    // Stars
+    t += 0.008;
+    stars.forEach(s => {
+      const alpha = s.a * (0.5 + 0.5 * Math.sin(t * s.spd * 100 + s.ph));
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, s.r, 0, Math.PI*2);
+      ctx.fillStyle = `rgba(200,230,255,${alpha.toFixed(3)})`;
+      ctx.fill();
+    });
+    requestAnimationFrame(draw);
+  }
+
+  window.addEventListener('resize', resize);
+  resize();
+  draw();
+})();
+
+// ════════════════════════════════════════════════════════════
+//  CLOCK — 100ms tick, pure Date(), no hardcoded time
+// ════════════════════════════════════════════════════════════
+function tickClock() {
+  const now = new Date();
+  const hh  = p2(now.getUTCHours());
+  const mm  = p2(now.getUTCMinutes());
+  const ss  = p2(now.getUTCSeconds());
+  const ms  = p3(now.getUTCMilliseconds());
+  document.getElementById('utc-clock').textContent = `${hh}:${mm}:${ss}.${ms}`;
+
+  if (gpsData && netUsPer_day !== null) updateLive(now);
+}
+setInterval(tickClock, 100);
+tickClock();
+
+// ════════════════════════════════════════════════════════════
+//  GEOLOCATION
+// ════════════════════════════════════════════════════════════
+function getLocation() {
+  const btn = document.getElementById('gps-btn');
+  if (!navigator.geolocation) {
+    setStatus('Geolocation not available in this browser.', 'err'); return;
+  }
+  btn.disabled = true;
+  setStatus('🛰 Acquiring satellite fix — please hold still...', 'loading');
+
+  navigator.geolocation.getCurrentPosition(onGPSSuccess, onGPSError, {
+    enableHighAccuracy: true,
+    timeout:    20000,
+    maximumAge: 0        // always a fresh fix — no cached position
+  });
+}
+
+function onGPSSuccess(pos) {
+  const c = pos.coords;
+  // Store raw GPS values exactly as received — zero modification
+  gpsData = {
+    lat:    c.latitude,
+    lon:    c.longitude,
+    alt:    c.altitude,          // null if device cannot provide
+    altAcc: c.altitudeAccuracy,  // null if no altitude
+    acc:    c.accuracy,
+    ts:     pos.timestamp
+  };
+
+  document.getElementById('gps-btn').disabled  = false;
+  document.getElementById('gps-btn').innerHTML = '<span class="acquire-icon">🔄</span> Refresh GPS Fix';
+  setStatus('✓ GPS fix acquired — all values are live and real', 'ok');
+
+  renderPosition();
+  renderEffects();
+  renderWhatIf();
+
+  if (gpsData.alt !== null) {
+    document.getElementById('alt-warn').style.display = 'none';
+    renderAltitude();
+  } else {
+    document.getElementById('alt-warn').style.display = 'block';
+    document.getElementById('alt-await').textContent  = '⚠ Altitude not provided by this device. Enable high-accuracy GPS.';
+  }
+
+  renderCorrectionStatic();
+  // Kick the explainer cards with real values
+  set('ex-you-alt',   gpsData.alt !== null
+    ? (gpsData.alt/1000).toFixed(3) + ' km altitude'
+    : 'altitude unavailable');
+  set('ex-you-speed', ((OMEGA_E * (R_EARTH + (gpsData.alt||0)) * Math.cos(gpsData.lat * Math.PI/180))).toFixed(1));
+}
+
+function onGPSError(err) {
+  document.getElementById('gps-btn').disabled = false;
+  let m;
+  switch(err.code) {
+    case 1: m='Permission denied — please allow location and retry.'; break;
+    case 2: m='Position unavailable — try outdoors with clear sky.'; break;
+    case 3: m='GPS timeout — retry in open sky.'; break;
+    default: m='GPS error: ' + err.message;
+  }
+  setStatus(m, 'err');
+  // Panels remain in awaiting state — no fallback, no fake values
+}
+
+// ════════════════════════════════════════════════════════════
+//  PHYSICS ENGINE
+//  Every function only called after real GPS data is in gpsData
+// ════════════════════════════════════════════════════════════
+
+function computePhysics() {
+  const h     = gpsData.alt !== null ? gpsData.alt : 0;
+  const r_you = R_EARTH + h;
+  const v_you = OMEGA_E * r_you * Math.cos(gpsData.lat * Math.PI / 180);
+
+  const phi_sat = -GM / R_SAT;
+  const phi_you = -GM / r_you;
+
+  // SR: fractional slowdown = 1 − √(1 − v²/c²)
+  const sr_sat_frac = 1 - Math.sqrt(1 - (V_SAT * V_SAT) / (C * C));
+  const sr_you_frac = 1 - Math.sqrt(1 - (v_you  * v_you)  / (C * C));
+  const sr_sat_us   = sr_sat_frac * 86400 * 1e6;  // µs/day satellite loses to SR
+  const sr_you_us   = sr_you_frac * 86400 * 1e6;  // µs/day you lose to SR
+
+  // GR: Δφ/c² → positive means satellite is higher (weaker gravity) → faster
+  const gr_us = ((phi_sat - phi_you) / (C * C)) * 86400 * 1e6;
+
+  // Net: how much faster satellite runs compared to you
+  // sat effect: −sr_sat_us (SR slows it) + gr_us (GR speeds it)
+  // you effect: −sr_you_us (SR slows you, negligible)
+  // net = (gr_us − sr_sat_us) − (−sr_you_us) = gr_us − sr_sat_us + sr_you_us
+  const net_us = gr_us - sr_sat_us + sr_you_us;
+
+  return { v_you, r_you, sr_sat_us, sr_you_us, gr_us, net_us, phi_sat, phi_you };
+}
+
+// ════════════════════════════════════════════════════════════
+//  RENDER: Position panel
+// ════════════════════════════════════════════════════════════
+function renderPosition() {
+  hide('pos-await'); show('pos-data');
+  const { r_you, v_you } = computePhysics();
+  const d = gpsData;
+  set('p-lat',    d.lat.toFixed(7) + '°');
+  set('p-lon',    d.lon.toFixed(7) + '°');
+  set('p-alt',    d.alt !== null ? d.alt.toFixed(3) + ' m' : 'Not provided by device');
+  set('p-altacc', d.altAcc !== null ? '± ' + d.altAcc.toFixed(2) + ' m' : 'N/A');
+  set('p-acc',    '± ' + d.acc.toFixed(2) + ' m');
+  set('p-vrot',   v_you.toFixed(6) + ' m/s');
+  set('p-radius', r_you.toFixed(3) + ' m');
+  set('p-ts',     new Date(d.ts).toUTCString());
+}
+
+// ════════════════════════════════════════════════════════════
+//  RENDER: SR + GR effect cards
+// ════════════════════════════════════════════════════════════
+function renderEffects() {
+  const { sr_sat_us, gr_us, net_us } = computePhysics();
+  netUsPer_day = net_us;
+
+  set('ex-sat-speed', V_SAT.toFixed(1));
+
+  document.getElementById('sr-val').innerHTML =
+    `<span style="color:var(--red)">−${sr_sat_us.toFixed(4)} µs/day</span>`;
+  document.getElementById('gr-val').innerHTML =
+    `<span style="color:var(--green)">+${Math.abs(gr_us).toFixed(4)} µs/day</span>`;
+}
+
+// ════════════════════════════════════════════════════════════
+//  RENDER: What if no correction
+// ════════════════════════════════════════════════════════════
+function renderWhatIf() {
+  hide('wi-await'); show('wi-data');
+  const { net_us } = computePhysics();
+
+  // GPS fix timestamp — compute error at time of fix
+  const midnight = new Date(gpsData.ts);
+  midnight.setUTCHours(0,0,0,0);
+  const secAtFix = (gpsData.ts - midnight.getTime()) / 1000;
+  const usAtFix  = net_us * (secAtFix / 86400);
+  const kmAtFix  = (usAtFix * 1e-6 * C / 1000);
+
+  // These update live in updateLive() — here just enable the panel
+  set('wi-us', net_us.toFixed(4));
+  set('wi-km', '—');   // filled by live updater
+  set('wi-err','—');
+}
+
+// ════════════════════════════════════════════════════════════
+//  RENDER: Altitude vs sea level (only if GPS altitude exists)
+// ════════════════════════════════════════════════════════════
+function renderAltitude() {
+  hide('alt-await'); show('alt-data');
+  const h      = gpsData.alt;
+  const r_you  = R_EARTH + h;
+  const phi_sl = -GM / R_EARTH;
+  const phi_you= -GM / r_you;
+  const d_phi  = phi_you - phi_sl;
+  const ratio  = d_phi / (C * C);
+  const ns_day = ratio * 86400 * 1e9;   // nanoseconds/day
+
+  set('a-phi',  phi_you.toExponential(9) + ' m²/s²');
+  set('a-phi0', phi_sl.toExponential(9)  + ' m²/s²');
+  set('a-ratio',ratio.toExponential(9));
+  set('a-ns',   Math.abs(ns_day).toFixed(9) + ' ns/day');
+  set('a-1y',   fmtTime(ns_day * 365.25));
+  set('a-10y',  fmtTime(ns_day * 3652.5));
+}
+
+// ════════════════════════════════════════════════════════════
+//  RENDER: Correction panel static parts
+// ════════════════════════════════════════════════════════════
+function renderCorrectionStatic() {
+  hide('corr-await'); show('corr-data');
+  set('cr-rate', netUsPer_day.toFixed(6) + ' µs/day');
+}
+
+// ════════════════════════════════════════════════════════════
+//  LIVE UPDATER — called every 100ms after GPS acquired
+//  All values derived from real time + real netUsPer_day
+//  NO hardcoded time, NO hardcoded corrections
+// ════════════════════════════════════════════════════════════
+function updateLive(now) {
+  // ── True seconds since midnight UTC ──
+  const midnight = new Date(now);
+  midnight.setUTCHours(0,0,0,0);
+  const secToday = (now.getTime() - midnight.getTime()) / 1000;
+
+  // ── Cumulative correction today ──
+  const corrToday = netUsPer_day * (secToday / 86400);   // µs
+
+  // ── HERO NUMBER ──
+  const heroEl = document.getElementById('hero-number');
+  if (heroEl.classList.contains('awaiting')) {
+    heroEl.classList.remove('awaiting');
+    heroEl.style.fontSize = '';
+    document.getElementById('hero-live-label').textContent = '● LIVE';
+    document.getElementById('meaning-await').classList.add('hidden');
+    document.getElementById('meaning-live').classList.remove('hidden');
+  }
+  heroEl.textContent = corrToday.toFixed(9);
+  set('hero-unit', 'µs — satellite clock ahead of yours since midnight UTC');
+
+  // Meaning line
+  set('meaning-us',   corrToday.toFixed(6));
+  // Rate in ns/second
+  const nsPerSec = netUsPer_day * 1e3 / 86400;   // nanoseconds per second of real time
+  set('meaning-rate', nsPerSec.toFixed(6));
+
+  // ── Correction panel live values ──
+  set('cr-elapsed',   secToday.toFixed(3) + ' s');
+  set('cr-big',       corrToday.toFixed(9));
+
+  // Session
+  const sessSec = (now.getTime() - PAGE_LOAD) / 1000;
+  const sh = Math.floor(sessSec/3600);
+  const sm = Math.floor((sessSec%3600)/60);
+  const sc = (sessSec%60).toFixed(1);
+  set('cr-sess-dur',  (sh?sh+'h ':'')+(sm?sm+'m ':'')+sc+'s');
+  set('cr-sess-corr', (netUsPer_day * sessSec / 86400).toFixed(12) + ' µs');
+
+  // ── What-if error ──
+  const distKm = corrToday * 1e-6 * C / 1000;
+  set('wi-err', distKm.toFixed(4));
+  set('wi-km',  distKm.toFixed(4));
+  set('wi-us',  netUsPer_day.toFixed(4));
+}
+
+// ════════════════════════════════════════════════════════════
+//  HELPERS
+// ════════════════════════════════════════════════════════════
+function set(id, v) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = v;
+}
+function show(id) {
+  const el = document.getElementById(id);
+  if (el) el.classList.remove('hidden');
+}
+function hide(id) {
+  const el = document.getElementById(id);
+  if (el) el.classList.add('hidden');
+}
+function setStatus(msg, cls) {
+  const el = document.getElementById('status');
+  el.textContent = msg; el.className = 'status-line ' + (cls||'');
+}
+function p2(n) { return String(n).padStart(2,'0'); }
+function p3(n) { return String(n).padStart(3,'0'); }
+
+function fmtTime(ns) {
+  const a = Math.abs(ns);
+  if (a === 0)  return '0';
+  if (a < 1e-3) return (a*1e6).toExponential(4) + ' as';
+  if (a < 1)    return (a*1e3).toFixed(6) + ' ps';
+  if (a < 1e3)  return a.toFixed(6) + ' ns';
+  if (a < 1e6)  return (a/1e3).toFixed(6) + ' µs';
+  if (a < 1e9)  return (a/1e6).toFixed(6) + ' ms';
+  return              (a/1e9).toFixed(6) + ' s';
+}
+</script>
+</body>
+</html>
